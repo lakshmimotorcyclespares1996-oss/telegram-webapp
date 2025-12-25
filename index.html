@@ -129,9 +129,10 @@ async function loadParts(categoryId) {
 
       <!-- IMAGE -->
       <img 
-        src="${p.image_url || 'https://via.placeholder.com/80'}"
-        style="width:80px;height:80px;object-fit:contain;border:1px solid #ddd;border-radius:6px;"
-      >
+  src="${p.image_url || 'https://via.placeholder.com/80'}"
+  style="width:80px;height:80px;object-fit:contain;cursor:pointer;"
+  onclick="handleImageClick('${p.id}','${p.image_url || ''}')"
+/>
 
       <!-- DETAILS -->
       <div style="flex:1;">
@@ -441,6 +442,51 @@ async function removeCartItem(id) {
   loadCart();
 }
   
+/* ================= HANDLE BODY PART COLOURS ================= */
+async function handleImageClick(partId, imageUrl) {
+  openImageModal(imageUrl || "https://via.placeholder.com/400");
+
+  // 🔹 Fetch body colour variants (if any)
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/body_part_variants?spare_part_id=eq.${partId}&select=color,image_url`,
+    {
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`
+      }
+    }
+  );
+
+  const variants = await res.json();
+
+  // If no variants → normal part
+  if (!variants.length) return;
+
+  const colorDiv = document.getElementById("colorVariants");
+
+  variants.forEach(v => {
+    const btn = document.createElement("img");
+    btn.src = v.image_url;
+    btn.title = v.color;
+
+    btn.style.cssText = `
+      width:60px;
+      height:60px;
+      object-fit:contain;
+      border:2px solid #fff;
+      border-radius:6px;
+      cursor:pointer;
+      background:#fff;
+    `;
+
+    btn.onclick = () => {
+      document.getElementById("modalImage").src = v.image_url;
+    };
+
+    colorDiv.appendChild(btn);
+  });
+} 
+  
 /* ================= PLACE ORDER ================= */
 async function placeOrder(paymentMethod) {
   const name = document.getElementById("name").value.trim();
@@ -490,31 +536,30 @@ async function placeOrder(paymentMethod) {
 
   // 3️⃣ CREATE ORDER  ✅ THIS IS THE MISSING PART
   const orderRes = await fetch(
-    `${SUPABASE_URL}/rest/v1/orders`,
-    {
-      method: "POST",
-      headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        telegram_user_id: telegramUserId,
-        customer_name: name,
-        phone: phone,
-        address: address,
-        subtotal: subtotal,
-        delivery_fee: deliveryFee,
-        total_amount: totalAmount,
-
-        // ✅ THIS IS WHERE THE LINES GO
-        payment_method: paymentMethod,
-        payment_status: paymentMethod === "COD" ? "UNPAID" : "PENDING",
-        order_status: "CREATED"
-      })
-    }
-  );
-
+  `${SUPABASE_URL}/rest/v1/orders`,
+  {
+    method: "POST",
+    headers: {
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+      "Content-Type": "application/json",
+      Prefer: "return=representation"
+    },
+    body: JSON.stringify({
+      telegram_user_id: telegramUserId,
+      customer_name: name,
+      phone: phone,
+      address: address,
+      subtotal: subtotal,
+      delivery_fee: deliveryFee,
+      total_amount: totalAmount,
+      payment_method: paymentMethod,
+      payment_status: paymentMethod === "COD" ? "UNPAID" : "PENDING",
+      order_status: "CREATED"
+    })
+  }
+);
+  
   const orderData = await orderRes.json();
   const orderId = orderData[0].id;
 
@@ -545,7 +590,59 @@ brandSelect.onchange=()=>loadModels(brandSelect.value);
 modelSelect.onchange=()=>loadYears(modelSelect.value);
 yearSelect.onchange=()=>loadCategories();
 loadBrands();
-</script>
+/* ================= ADD MODAL FUNCTIONS (JS) ================= */
+function openImageModal(imageUrl) {
+  document.getElementById("modalImage").src = imageUrl;
+  document.getElementById("colorVariants").innerHTML = "";
+  document.getElementById("imageModal").style.display = "flex";
+}
 
+function closeModal() {
+  document.getElementById("imageModal").style.display = "none";
+}
+  
+</script>
+  
+
+
+
+<!-- ================= IMAGE MODAL ================= -->
+<div id="imageModal" style="
+  display:none;
+  position:fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background:rgba(0,0,0,0.85);
+  z-index:9999;
+  justify-content:center;
+  align-items:center;
+  flex-direction:column;
+">
+
+  <img id="modalImage" style="
+    max-width:90%;
+    max-height:70%;
+    border-radius:8px;
+    background:#fff;
+    padding:10px;
+  ">
+
+  <div id="colorVariants" style="
+    margin-top:15px;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    justify-content:center;
+  "></div>
+
+  <button onclick="closeModal()" style="
+    margin-top:20px;
+    padding:10px 20px;
+    font-size:16px;
+  ">
+    ❌ Close
+  </button>
+</div>
+  
 </body>
 </html>
