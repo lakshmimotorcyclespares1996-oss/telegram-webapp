@@ -171,20 +171,16 @@ async function loadCategories() {
 async function loadParts(categoryId) {
   partsDiv.innerHTML = "Loading parts...";
 
-  const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/spare_parts?
-     brand_id=eq.${brandSelect.value}
-     &model_id=eq.${modelSelect.value}
-     &year_id=eq.${yearSelect.value}
-     &category_id=eq.${categoryId}
-     &select=id,part_name,price`,
-    {
-      headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`
-      }
+const res = await fetch(
+  `${SUPABASE_URL}/rest/v1/spare_parts?brand_id=eq.${brandSelect.value}&model_id=eq.${modelSelect.value}&year_id=eq.${yearSelect.value}&category_id=eq.${categoryId}&select=id,part_name,price`,
+  {
+    headers: {
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${SUPABASE_KEY}`
     }
-  );
+  }
+);
+
 
   const parts = await res.json();
   partsDiv.innerHTML = "";
