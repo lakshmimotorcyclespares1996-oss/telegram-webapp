@@ -38,7 +38,8 @@ const telegramUserId = Telegram.WebApp.initDataUnsafe?.user?.id || 0;
 const SUPABASE_URL = "https://gmajjousigloyiablmeo.supabase.co";
 const SUPABASE_KEY = "sb_publishable_anzjPC7WhQVAzPP1JSAm4g_W-G90zZY";
 const GOOGLE_MAPS_API_KEY = ""; // add key later in production
-
+const ADMIN_CHAT_ID = "8247725524";
+const ADMIN_BOT_TOKEN = "AAHNNF7r1o6Xp1qIul7Bq3s_6iUCrd-L0PU";
 /* ================= ELEMENTS ================= */
 const brandSelect = document.getElementById("brandSelect");
 const modelSelect = document.getElementById("modelSelect");
@@ -610,6 +611,13 @@ const orderRes = await fetch(
 
 const orderData = await orderRes.json();
 const orderId = orderData[0].id;
+await notifyAdmin({
+  id: orderId,
+  customer_name: name,
+  phone: phone,
+  address: address,
+  total_amount: totalAmount
+});
 
 // ======================================================
 
@@ -651,6 +659,33 @@ function openImageModal(imageUrl) {
 
 function closeModal() {
   document.getElementById("imageModal").style.display = "none";
+}
+/* ================= ADD FUNCTION TO SEND ADMIN ALERT ================= */
+  async function notifyAdmin(order) {
+  const message = `
+🆕 *NEW COD ORDER*
+
+🧾 Order ID: ${order.id}
+👤 Name: ${order.customer_name}
+📞 Phone: ${order.phone}
+💰 Amount: ₹${order.total_amount}
+📍 Address:
+${order.address}
+
+⏰ ${new Date().toLocaleString()}
+  `;
+
+  const url = `https://api.telegram.org/bot${ADMIN_BOT_TOKEN}/sendMessage`;
+
+  await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: ADMIN_CHAT_ID,
+      text: message,
+      parse_mode: "Markdown"
+    })
+  });
 }
   
 </script>
