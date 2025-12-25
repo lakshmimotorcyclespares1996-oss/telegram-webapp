@@ -140,7 +140,7 @@ async function loadParts(categoryId) {
         ₹${p.price}<br>
         Stock: ${p.stock_qty}<br><br>
 
-        <button onclick="addToCart('${p.id}', ${p.price})">
+        <button onclick="addToCartWithVariant('${p.id}', ${p.price})">
           Add to Cart
         </button>
       </div>
@@ -151,7 +151,30 @@ async function loadParts(categoryId) {
 
   partsDiv.innerHTML += `<button onclick="loadCart()" style="width:100%;padding:12px;">🛒 View Cart</button>`;
 }
+/* ================= UN NAMED ================= */
+async function addToCartWithVariant(partId, basePrice) {
+  const color = window.selectedColor || null;
+  const price = window.selectedPrice || basePrice;
 
+  await fetch(`${SUPABASE_URL}/rest/v1/cart_items`, {
+    method: "POST",
+    headers: {
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      telegram_user_id: telegramUserId,
+      spare_part_id: partId,
+      color: color,
+      quantity: 1,
+      price: price
+    })
+  });
+
+  alert("Added to cart");
+}
+  
 /* ================= ADD TO CART ================= */
 async function addToCart(partId, price) {
   const check = await fetch(
@@ -480,11 +503,19 @@ async function handleImageClick(partId, imageUrl) {
     `;
 
     btn.onclick = () => {
-      document.getElementById("modalImage").src = v.image_url;
-    };
+  document.getElementById("modalImage").src = v.image_url;
 
-    colorDiv.appendChild(btn);
-  });
+  // update price on UI
+  const priceSpan = document.getElementById("modalPrice");
+  if (priceSpan) {
+    priceSpan.innerText = "₹" + v.price;
+  }
+
+  // store selected color & price (used for cart)
+  window.selectedColor = v.color;
+  window.selectedPrice = v.price;
+};
+
 } 
   
 /* ================= PLACE ORDER ================= */
@@ -533,6 +564,39 @@ async function placeOrder(paymentMethod) {
 
   const deliveryFee = 200;
   const totalAmount = subtotal + deliveryFee;
+
+  // ================= CREATE ORDER (COD) =================
+
+const orderRes = await fetch(
+  `${SUPABASE_URL}/rest/v1/orders`,
+  {
+    method: "POST",
+    headers: {
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+      "Content-Type": "application/json",
+      Prefer: "return=representation"
+    },
+    body: JSON.stringify({
+      telegram_user_id: telegramUserId,
+      customer_name: name,
+      phone: phone,
+      email: email || null,
+      address: address,
+      subtotal: subtotal,
+      delivery_fee: 200,
+      total_amount: totalAmount,
+      payment_method: "COD",
+      payment_status: "UNPAID",
+      order_status: "CREATED"
+    })
+  }
+);
+
+const orderData = await orderRes.json();
+const orderId = orderData[0].id;
+
+// ======================================================
 
   // 3️⃣ CREATE ORDER  ✅ THIS IS THE MISSING PART
   const orderRes = await fetch(
@@ -626,6 +690,12 @@ function closeModal() {
     background:#fff;
     padding:10px;
   ">
+  <p id="modalPrice" style="
+  color:#fff;
+  font-size:18px;
+  margin-top:10px;
+">
+</p>
 
   <div id="colorVariants" style="
     margin-top:15px;
