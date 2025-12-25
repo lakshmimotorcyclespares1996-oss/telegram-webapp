@@ -1,28 +1,141 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <title>PK 2 Wheeler Spares</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PK Spares Demo</title>
+
+  <!-- Telegram Web App library -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
-<body style="font-family:Arial; padding:20px">
 
-  <h2>🛵 PK Spares</h2>
-  <p><b>Product:</b> Brake Pad</p>
-  <p><b>Price:</b> ₹499</p>
+<body style="font-family: Arial; padding: 20px;">
 
-  <button onclick="orderNow()" style="padding:12px;font-size:16px">
-    Order Now
-  </button>
+  <h2>🛵 Select Your Bike</h2>
 
-  <script>
-    function orderNow() {
-      Telegram.WebApp.sendData(JSON.stringify({
-        product: "Brake Pad",
-        price: 499
-      }));
+  <!-- BRAND -->
+  <label>Bike Brand</label><br>
+  <select id="brandSelect" style="width:100%; padding:10px;"></select>
+  <br><br>
+
+  <!-- MODEL -->
+  <label>Bike Model</label><br>
+  <select id="modelSelect" style="width:100%; padding:10px;"></select>
+  <br><br>
+
+  <!-- YEAR -->
+  <label>Bike Year</label><br>
+  <select id="yearSelect" style="width:100%; padding:10px;"></select>
+
+<script>
+/* ===============================
+   CONFIG – CHANGE ONLY THIS
+================================ */
+const SUPABASE_URL = "PASTE_YOUR_SUPABASE_PROJECT_URL";
+const SUPABASE_KEY = "PASTE_YOUR_SUPABASE_ANON_KEY";
+
+/* ===============================
+   ELEMENT REFERENCES
+================================ */
+const brandSelect = document.getElementById("brandSelect");
+const modelSelect = document.getElementById("modelSelect");
+const yearSelect  = document.getElementById("yearSelect");
+
+/* ===============================
+   LOAD BRANDS (FIRST STEP)
+================================ */
+async function loadBrands() {
+  brandSelect.innerHTML = `<option value="">Select Brand</option>`;
+  modelSelect.innerHTML = `<option value="">Select Model</option>`;
+  yearSelect.innerHTML  = `<option value="">Select Year</option>`;
+
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/bike_brands?select=id,brand_name`,
+    {
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`
+      }
     }
-  </script>
+  );
+
+  const brands = await res.json();
+
+  brands.forEach(b => {
+    brandSelect.innerHTML +=
+      `<option value="${b.id}">${b.brand_name}</option>`;
+  });
+}
+
+/* ===============================
+   LOAD MODELS WHEN BRAND CHANGES
+================================ */
+async function loadModels(brandId) {
+  modelSelect.innerHTML = `<option value="">Select Model</option>`;
+  yearSelect.innerHTML  = `<option value="">Select Year</option>`;
+
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/bike_models?brand_id=eq.${brandId}&select=id,model_name`,
+    {
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`
+      }
+    }
+  );
+
+  const models = await res.json();
+
+  models.forEach(m => {
+    modelSelect.innerHTML +=
+      `<option value="${m.id}">${m.model_name}</option>`;
+  });
+}
+
+/* ===============================
+   LOAD YEARS WHEN MODEL CHANGES
+================================ */
+async function loadYears(modelId) {
+  yearSelect.innerHTML = `<option value="">Select Year</option>`;
+
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/bike_years?model_id=eq.${modelId}&select=id,year`,
+    {
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`
+      }
+    }
+  );
+
+  const years = await res.json();
+
+  years.forEach(y => {
+    yearSelect.innerHTML +=
+      `<option value="${y.id}">${y.year}</option>`;
+  });
+}
+
+/* ===============================
+   EVENT LISTENERS
+================================ */
+brandSelect.addEventListener("change", () => {
+  if (brandSelect.value) {
+    loadModels(brandSelect.value);
+  }
+});
+
+modelSelect.addEventListener("change", () => {
+  if (modelSelect.value) {
+    loadYears(modelSelect.value);
+  }
+});
+
+/* ===============================
+   START APP
+================================ */
+loadBrands();
+
+</script>
 
 </body>
 </html>
