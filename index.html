@@ -154,7 +154,7 @@ async function loadCart() {
   partsDiv.innerHTML = "Loading cart...";
 
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/cart_items?telegram_user_id=eq.${telegramUserId}&select=id,quantity,price,spare_part_id,spare_parts(part_name)`,
+    `${SUPABASE_URL}/rest/v1/cart_items?telegram_user_id=eq.${telegramUserId}&select=id,quantity,price,spare_part_id`,
     {
       headers: {
         apikey: SUPABASE_KEY,
@@ -173,13 +173,27 @@ async function loadCart() {
   let subtotal = 0;
   partsDiv.innerHTML = "<h3>Your Cart</h3>";
 
-  items.forEach(i => {
+  for (const i of items) {
+    // 🔹 Fetch spare part name
+    const partRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/spare_parts?id=eq.${i.spare_part_id}&select=part_name`,
+      {
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`
+        }
+      }
+    );
+
+    const partData = await partRes.json();
+    const partName = partData[0]?.part_name || "Unknown Part";
+
     const itemTotal = i.price * i.quantity;
     subtotal += itemTotal;
 
     partsDiv.innerHTML += `
       <div style="border:1px solid #ccc;padding:10px;margin-bottom:8px;">
-        <b>${i.spare_parts.part_name}</b><br>
+        <b>${partName}</b><br>
         ₹${i.price} × ${i.quantity} = ₹${itemTotal}<br><br>
 
         <button onclick="updateQty('${i.id}', ${i.quantity - 1})">−</button>
@@ -187,7 +201,7 @@ async function loadCart() {
         <button onclick="removeCartItem('${i.id}')">❌ Remove</button>
       </div>
     `;
-  });
+  }
 
   partsDiv.innerHTML += `
     <hr>
@@ -234,6 +248,21 @@ async function updateQty(cartItemId, newQty) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({ quantity: newQty })
+    }
+  );
+
+  loadCart();
+}
+
+async function removeCartItem(id) {
+  await fetch(
+    `${SUPABASE_URL}/rest/v1/cart_items?id=eq.${id}`,
+    {
+      method: "DELETE",
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`
+      }
     }
   );
 
