@@ -619,10 +619,56 @@ await notifyAdmin({
   total_amount: totalAmount
 });
 
-// ======================================================
+/* ================= CALL EMAIL FUNCTION FROM WEB APP ================= */
+// 📧 Send invoice email (if email exists)
+if (email) {
+
+  // Fetch ordered items with names
+  const itemRes = await fetch(
+    `${SUPABASE_URL}/rest/v1/order_items?order_id=eq.${orderId}&select=quantity,price,spare_part_id`,
+    { headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`} }
+  );
+
+  const rawItems = await itemRes.json();
+
+  const items = [];
+  for (const i of rawItems) {
+    const partRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/spare_parts?id=eq.${i.spare_part_id}&select=part_name`,
+      { headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`} }
+    );
+    const part = await partRes.json();
+    items.push({
+      part_name: part[0].part_name,
+      quantity: i.quantity,
+      price: i.price
+    });
+  }
+
+  await fetch(
+    "https://YOUR_PROJECT_ID.functions.supabase.co/send-invoice",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        order: {
+          id: orderId,
+          customer_name: name,
+          phone,
+          email,
+          address,
+          subtotal,
+          delivery_fee: 200,
+          total_amount: totalAmount
+        },
+        items
+      })
+    }
+  );
+}
 
   
-
+/* ================= Clear cart ================= */
   // 4️⃣ Clear cart
   await fetch(
     `${SUPABASE_URL}/rest/v1/cart_items?telegram_user_id=eq.${telegramUserId}`,
