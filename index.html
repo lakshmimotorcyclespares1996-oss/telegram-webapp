@@ -1,51 +1,36 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>PK 2 Wheeler Spares</title>
+  <title>Lakshmi Motor Cycle Spares</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 
-<body style="font-family: Arial; padding: 20px;">
-<!-- SHOP BRANDING -->
-<div style="
-  text-align:center;
-  padding:15px;
-  margin-bottom:15px;
-  border-bottom:2px solid #eee;
-">
+<body style="font-family: Arial; padding: 20px; background:#f9f9f9;">
 
-  <h1 style="margin:0;font-size:22px;">
-    🏍️ LAKSHMI MOTOR CYCLE SPARES
-  </h1>
-
-  <p style="margin:5px 0;font-size:14px;color:#555;">
-    Genuine 2-Wheeler Spare Parts
-  </p>
-
-  <p style="margin:5px 0;font-size:13px;color:#777;">
-    🚚 Fast Delivery • 💯 Trusted Store
-  </p>
-
+<!-- ===============================
+     SHOP BRANDING
+================================ -->
+<div style="text-align:center;padding:15px;margin-bottom:15px;background:#fff;border:1px solid #ddd;border-radius:8px;">
+  <h1 style="margin:0;font-size:22px;color:#000;">🏍️ LAKSHMI MOTOR CYCLE SPARES</h1>
+  <p style="margin:5px 0;font-size:14px;color:#333;">Genuine 2-Wheeler Spare Parts</p>
+  <p style="margin:5px 0;font-size:13px;color:#555;">🚚 Fast Delivery • 💯 Trusted Store</p>
 </div>
+
 <h2>🛵 Select Your Bike</h2>
 
 <label>Bike Brand</label><br>
-<select id="brandSelect" style="width:100%; padding:10px;"></select>
-<br><br>
+<select id="brandSelect" style="width:100%;padding:10px;"></select><br><br>
 
 <label>Bike Model</label><br>
-<select id="modelSelect" style="width:100%; padding:10px;"></select>
-<br><br>
+<select id="modelSelect" style="width:100%;padding:10px;"></select><br><br>
 
 <label>Bike Year</label><br>
-<select id="yearSelect" style="width:100%; padding:10px;"></select>
+<select id="yearSelect" style="width:100%;padding:10px;"></select><br><br>
 
-<br><br>
 <h3>Select Category</h3>
 <div id="categories"></div>
 
-<br>
 <h3>Available Parts</h3>
 <div id="parts"></div>
 
@@ -80,11 +65,8 @@ async function loadBrands() {
     `${SUPABASE_URL}/rest/v1/bike_brands?select=id,brand_name`,
     { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
   );
-
-  const brands = await res.json();
-  brands.forEach(b => {
-    brandSelect.innerHTML += `<option value="${b.id}">${b.brand_name}</option>`;
-  });
+  const data = await res.json();
+  data.forEach(b => brandSelect.innerHTML += `<option value="${b.id}">${b.brand_name}</option>`);
 }
 
 /* ===============================
@@ -100,11 +82,8 @@ async function loadModels(brandId) {
     `${SUPABASE_URL}/rest/v1/bike_models?brand_id=eq.${brandId}&select=id,model_name`,
     { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
   );
-
-  const models = await res.json();
-  models.forEach(m => {
-    modelSelect.innerHTML += `<option value="${m.id}">${m.model_name}</option>`;
-  });
+  const data = await res.json();
+  data.forEach(m => modelSelect.innerHTML += `<option value="${m.id}">${m.model_name}</option>`);
 }
 
 /* ===============================
@@ -119,11 +98,8 @@ async function loadYears(modelId) {
     `${SUPABASE_URL}/rest/v1/bike_years?model_id=eq.${modelId}&select=id,year`,
     { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
   );
-
-  const years = await res.json();
-  years.forEach(y => {
-    yearSelect.innerHTML += `<option value="${y.id}">${y.year}</option>`;
-  });
+  const data = await res.json();
+  data.forEach(y => yearSelect.innerHTML += `<option value="${y.id}">${y.year}</option>`);
 }
 
 /* ===============================
@@ -137,15 +113,12 @@ async function loadCategories() {
     `${SUPABASE_URL}/rest/v1/categories?select=id,category_name`,
     { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
   );
+  const data = await res.json();
 
-  const categories = await res.json();
-  categories.forEach(c => {
+  data.forEach(c => {
     const btn = document.createElement("button");
-    btn.innerText = c.category_name;
-    btn.style.display = "block";
-    btn.style.width = "100%";
-    btn.style.padding = "12px";
-    btn.style.marginBottom = "8px";
+    btn.textContent = c.category_name;
+    btn.style.cssText = "width:100%;padding:12px;margin-bottom:8px;";
     btn.onclick = () => loadParts(c.id);
     categoryDiv.appendChild(btn);
   });
@@ -159,351 +132,110 @@ async function loadParts(categoryId) {
 
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/spare_parts?brand_id=eq.${brandSelect.value}&model_id=eq.${modelSelect.value}&year_id=eq.${yearSelect.value}&category_id=eq.${categoryId}&select=id,part_name,price,stock_qty`,
-    {
-      headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`
-      }
-    }
+    { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
   );
-
   const parts = await res.json();
   partsDiv.innerHTML = "";
 
-  if (parts.length === 0) {
+  if (!parts.length) {
     partsDiv.innerHTML = "No parts available";
     return;
   }
 
-  // 1️⃣ Show all parts FIRST
   parts.forEach(p => {
     partsDiv.innerHTML += `
-      <div style="border:1px solid #ddd;padding:10px;margin-bottom:8px;">
+      <div style="background:#fff;border:1px solid #ddd;padding:10px;margin-bottom:8px;">
         <b>${p.part_name}</b><br>
         Price: ₹${p.price}<br>
         Available Qty: ${p.stock_qty}<br>
-        <button onclick="addToCart('${p.id}', '${p.part_name}', ${p.price})">
-          Add to Cart
-        </button>
+        <button onclick="addToCart('${p.id}', ${p.price})">Add to Cart</button>
       </div>
     `;
   });
 
-  // 2️⃣ Show View Cart button AT THE END
   partsDiv.innerHTML += `
     <button onclick="loadCart()" style="padding:12px;width:100%;margin-top:10px;">
       🛒 View Cart
     </button>
   `;
 }
+
 /* ===============================
-   ADD TO CART FUNCTION
+   ADD TO CART
 ================================ */
-async function addToCart(partId, partName, price) {
-  if (!telegramUserId) {
-    alert("Telegram user not detected");
-    return;
-  }
-
-  // 1️⃣ Check if item already exists in cart
-  const checkRes = await fetch(
+async function addToCart(partId, price) {
+  const check = await fetch(
     `${SUPABASE_URL}/rest/v1/cart_items?telegram_user_id=eq.${telegramUserId}&spare_part_id=eq.${partId}&select=id,quantity`,
-    {
-      headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`
-      }
-    }
+    { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
   );
+  const existing = await check.json();
 
-  const existing = await checkRes.json();
-
-  // 2️⃣ If exists → update quantity
-  if (existing.length > 0) {
-    const item = existing[0];
-
-    await fetch(
-      `${SUPABASE_URL}/rest/v1/cart_items?id=eq.${item.id}`,
-      {
-        method: "PATCH",
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          quantity: item.quantity + 1
-        })
-      }
-    );
-  } 
-  // 3️⃣ Else → insert new row
-  else {
-    await fetch(
-      `${SUPABASE_URL}/rest/v1/cart_items`,
-      {
-        method: "POST",
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          telegram_user_id: telegramUserId,
-          spare_part_id: partId,
-          quantity: 1,
-          price: price
-        })
-      }
-    );
+  if (existing.length) {
+    await fetch(`${SUPABASE_URL}/rest/v1/cart_items?id=eq.${existing[0].id}`, {
+      method:"PATCH",
+      headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,"Content-Type":"application/json"},
+      body:JSON.stringify({quantity: existing[0].quantity + 1})
+    });
+  } else {
+    await fetch(`${SUPABASE_URL}/rest/v1/cart_items`, {
+      method:"POST",
+      headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,"Content-Type":"application/json"},
+      body:JSON.stringify({telegram_user_id:telegramUserId,spare_part_id:partId,quantity:1,price})
+    });
   }
-
-  alert(partName + " added to cart");
+  alert("Added to cart");
 }
 
 /* ===============================
-   LOAD CART FUNCTION
+   LOAD CART
 ================================ */
-  async function loadCart() {
-  partsDiv.innerHTML = "Loading cart...";
-
+async function loadCart() {
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/cart_items?telegram_user_id=eq.${telegramUserId}&select=id,price,quantity`,
-    {
-      headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`
-      }
-    }
+    { headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`} }
   );
-
   const items = await res.json();
-
-  if (items.length === 0) {
-    partsDiv.innerHTML = "Cart is empty";
-    return;
-  }
+  if (!items.length) { partsDiv.innerHTML="Cart is empty"; return; }
 
   let subtotal = 0;
-  partsDiv.innerHTML = "<h3>Your Cart</h3>";
+  partsDiv.innerHTML="<h3>Your Cart</h3>";
 
-  items.forEach(i => {
-    const itemTotal = i.price * i.quantity;
-    subtotal += itemTotal;
-
-    partsDiv.innerHTML += `
-      <div style="border:1px solid #ccc;padding:8px;margin-bottom:6px">
-        Qty: ${i.quantity} × ₹${i.price} = ₹${itemTotal}
-        <button onclick="removeCartItem('${i.id}')">❌</button>
-      </div>
-    `;
+  items.forEach(i=>{
+    subtotal+=i.price*i.quantity;
+    partsDiv.innerHTML+=`
+      <div style="border:1px solid #ccc;padding:8px;margin-bottom:6px;">
+        Qty ${i.quantity} × ₹${i.price}
+      </div>`;
   });
 
-  partsDiv.innerHTML += `
+  partsDiv.innerHTML+=`
     <hr>
     Subtotal: ₹${subtotal}<br>
     Delivery: ₹200<br>
-    <b>Total: ₹${subtotal + 200}</b>
+    <b>Total: ₹${subtotal+200}</b><br><br>
+    <button onclick="showCheckout()" style="padding:14px;width:100%;">Proceed to Checkout</button>
   `;
 }
 
-  partsDiv.innerHTML += `
-  <br>
-  <button onclick="showCheckout()" style="padding:14px;width:100%;">
-    ✅ Proceed to Checkout
-  </button>
-`;
-
 /* ===============================
-   REMOVE ITEM FUNCTION
+   CHECKOUT UI
 ================================ */
-  async function removeCartItem(id) {
-  await fetch(
-    `${SUPABASE_URL}/rest/v1/cart_items?id=eq.${id}`,
-    {
-      method: "DELETE",
-      headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`
-      }
-    }
-  );
-
-  loadCart();
-}
-
-/* ===============================
-   ADD CHECKOUT FORM UI
-================================ */
-  function showCheckout() {
-  partsDiv.innerHTML = `
+function showCheckout(){
+  partsDiv.innerHTML=`
     <h3>Checkout</h3>
-
-    <label>Name *</label><br>
-    <input id="custName" style="width:100%;padding:8px"><br><br>
-
-    <label>Phone *</label><br>
-    <input id="custPhone" style="width:100%;padding:8px"><br><br>
-
-    <label>Email (optional)</label><br>
-    <input id="custEmail" style="width:100%;padding:8px"><br><br>
-
-    <label>Delivery Address *</label><br>
-    <textarea id="custAddress" style="width:100%;padding:8px"></textarea><br><br>
-
-    <button onclick="placeOrder()" style="padding:14px;width:100%;">
-      🧾 Place Order
-    </button>
+    <input id="custName" placeholder="Name" style="width:100%;padding:8px"><br><br>
+    <input id="custPhone" placeholder="Phone" style="width:100%;padding:8px"><br><br>
+    <textarea id="custAddress" placeholder="Address" style="width:100%;padding:8px"></textarea><br><br>
+    <button onclick="placeOrder()" style="padding:14px;width:100%;">Place Order</button>
   `;
 }
 
 /* ===============================
-   PLACE ORDER LOGIC (CRITICAL)
+   EVENTS + START
 ================================ */
-async function placeOrder() {
-  const name = document.getElementById("custName").value.trim();
-  const phone = document.getElementById("custPhone").value.trim();
-  const email = document.getElementById("custEmail").value.trim();
-  const address = document.getElementById("custAddress").value.trim();
-
-  if (!name || !phone || !address) {
-    alert("Please fill all required fields");
-    return;
-  }
-
-  // 1️⃣ Get cart items
-  const cartRes = await fetch(
-    `${SUPABASE_URL}/rest/v1/cart_items?telegram_user_id=eq.${telegramUserId}&select=spare_part_id,colour,quantity,price`,
-    {
-      headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`
-      }
-    }
-  );
-
-  const cartItems = await cartRes.json();
-
-  if (cartItems.length === 0) {
-    alert("Cart is empty");
-    return;
-  }
-
-  // 2️⃣ Calculate totals
-  let subtotal = 0;
-  cartItems.forEach(i => {
-    subtotal += i.price * i.quantity;
-  });
-
-  const deliveryFee = 200;
-  const totalAmount = subtotal + deliveryFee;
-
-  // 3️⃣ Create order
-  const orderRes = await fetch(
-    `${SUPABASE_URL}/rest/v1/orders`,
-    {
-      method: "POST",
-      headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-  telegram_user_id: telegramUserId,
-  customer_name: name,
-  phone: phone,
-  email: email || null,
-  address: address,
-  subtotal: subtotal,
-  delivery_fee: deliveryFee,
-  total_amount: totalAmount,
-
-  payment_method: "PENDING",   // will update later
-  payment_status: "UNPAID",    // will update after payment
-  order_status: "CREATED"
-})
-
-    }
-  );
-
-  const orderData = await orderRes.json();
-  const orderId = orderData[0].id;
-
-  // 4️⃣ Insert order items
-  for (let item of cartItems) {
-    await fetch(
-  `${SUPABASE_URL}/rest/v1/order_items`,
-  {
-    method: "POST",
-    headers: {
-      apikey: SUPABASE_KEY,
-      Authorization: `Bearer ${SUPABASE_KEY}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      order_id: orderId,
-      spare_part_id: item.spare_part_id,
-      spare_name: item.spare_name,   // snapshot
-      colour: item.colour || null,   // optional
-      quantity: item.quantity,
-      price: item.price
-    })
-  }
-);
-}
-
-  // 5️⃣ Clear cart
-  await fetch(
-    `${SUPABASE_URL}/rest/v1/cart_items?telegram_user_id=eq.${telegramUserId}`,
-    {
-      method: "DELETE",
-      headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`
-      }
-    }
-  );
-
-  // 6️⃣ Show confirmation
-  partsDiv.innerHTML = `
-    <h3>🎉 Order Placed Successfully</h3>
-    <p><b>Order ID:</b> ${orderId}</p>
-    <p><b>Total Paid:</b> ₹${totalAmount}</p>
-    <p><b>Delivery Address:</b><br>${address}</p>
-  `;
-}
-/* ===============================
-   WHEN INSERTING INTO order_items
-================================ */
-  await fetch(
-  `${SUPABASE_URL}/rest/v1/order_items`,
-  {
-    method: "POST",
-    headers: {
-      apikey: SUPABASE_KEY,
-      Authorization: `Bearer ${SUPABASE_KEY}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      order_id: orderId,
-      spare_part_id: item.spare_part_id,
-      colour: item.colour || null,
-      quantity: item.quantity,
-      price: item.price
-    })
-  }
-);
-
-/* ===============================
-   EVENTS
-================================ */
-brandSelect.onchange = () => brandSelect.value && loadModels(brandSelect.value);
-modelSelect.onchange = () => modelSelect.value && loadYears(modelSelect.value);
-yearSelect.onchange  = () => yearSelect.value && loadCategories();
-
-/* ===============================
-   START
-================================ */
+brandSelect.onchange=()=>brandSelect.value&&loadModels(brandSelect.value);
+modelSelect.onchange=()=>modelSelect.value&&loadYears(modelSelect.value);
+yearSelect.onchange =()=>yearSelect.value && loadCategories();
 loadBrands();
 </script>
 
