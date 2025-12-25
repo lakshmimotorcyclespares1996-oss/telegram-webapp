@@ -6,54 +6,46 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 
-<body style="font-family: Arial; padding: 20px; background:#f9f9f9;">
+<body style="font-family: Arial; padding: 20px; background:#f4f4f4;">
 
-<!-- ===============================
-     SHOP BRANDING
-================================ -->
-<div style="text-align:center;padding:15px;margin-bottom:15px;background:#fff;border:1px solid #ddd;border-radius:8px;">
-  <h1 style="margin:0;font-size:22px;color:#000;">🏍️ LAKSHMI MOTOR CYCLE SPARES</h1>
-  <p style="margin:5px 0;font-size:14px;color:#333;">Genuine 2-Wheeler Spare Parts</p>
-  <p style="margin:5px 0;font-size:13px;color:#555;">🚚 Fast Delivery • 💯 Trusted Store</p>
+<!-- ================= SHOP BRANDING ================= -->
+<div style="text-align:center;padding:15px;margin-bottom:15px;background:#fff;border-radius:8px;">
+  <h1 style="margin:0;font-size:22px;">🏍️ LAKSHMI MOTOR CYCLE SPARES</h1>
+  <p style="margin:5px 0;color:#555;">Genuine 2-Wheeler Spare Parts</p>
+  <p style="margin:5px 0;color:#777;">🚚 Fast Delivery • 💯 Trusted Store</p>
 </div>
 
-<h2>🛵 Select Your Bike</h2>
+<h3>🛵 Select Your Bike</h3>
 
-<label>Bike Brand</label><br>
+<label>Brand</label>
 <select id="brandSelect" style="width:100%;padding:10px;"></select><br><br>
 
-<label>Bike Model</label><br>
+<label>Model</label>
 <select id="modelSelect" style="width:100%;padding:10px;"></select><br><br>
 
-<label>Bike Year</label><br>
+<label>Year</label>
 <select id="yearSelect" style="width:100%;padding:10px;"></select><br><br>
 
-<h3>Select Category</h3>
+<h3>Category</h3>
 <div id="categories"></div>
 
 <h3>Available Parts</h3>
 <div id="parts"></div>
 
 <script>
-/* ===============================
-   CONFIG
-================================ */
+/* ================= CONFIG ================= */
 const telegramUserId = Telegram.WebApp.initDataUnsafe?.user?.id || 0;
 const SUPABASE_URL = "https://gmajjousigloyiablmeo.supabase.co";
 const SUPABASE_KEY = "sb_publishable_anzjPC7WhQVAzPP1JSAm4g_W-G90zZY";
 
-/* ===============================
-   ELEMENTS
-================================ */
+/* ================= ELEMENTS ================= */
 const brandSelect = document.getElementById("brandSelect");
 const modelSelect = document.getElementById("modelSelect");
 const yearSelect  = document.getElementById("yearSelect");
 const categoryDiv = document.getElementById("categories");
 const partsDiv    = document.getElementById("parts");
 
-/* ===============================
-   LOAD BRANDS
-================================ */
+/* ================= LOAD BRANDS ================= */
 async function loadBrands() {
   brandSelect.innerHTML = `<option value="">Select Brand</option>`;
   modelSelect.innerHTML = `<option value="">Select Model</option>`;
@@ -61,58 +53,44 @@ async function loadBrands() {
   categoryDiv.innerHTML = "";
   partsDiv.innerHTML = "";
 
-  const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/bike_brands?select=id,brand_name`,
-    { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
-  );
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/bike_brands?select=id,brand_name`,
+    { headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`}});
   const data = await res.json();
   data.forEach(b => brandSelect.innerHTML += `<option value="${b.id}">${b.brand_name}</option>`);
 }
 
-/* ===============================
-   LOAD MODELS
-================================ */
-async function loadModels(brandId) {
+/* ================= LOAD MODELS ================= */
+async function loadModels(id) {
   modelSelect.innerHTML = `<option value="">Select Model</option>`;
-  yearSelect.innerHTML  = `<option value="">Select Year</option>`;
-  categoryDiv.innerHTML = "";
-  partsDiv.innerHTML = "";
-
-  const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/bike_models?brand_id=eq.${brandId}&select=id,model_name`,
-    { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
-  );
-  const data = await res.json();
-  data.forEach(m => modelSelect.innerHTML += `<option value="${m.id}">${m.model_name}</option>`);
-}
-
-/* ===============================
-   LOAD YEARS
-================================ */
-async function loadYears(modelId) {
   yearSelect.innerHTML = `<option value="">Select Year</option>`;
   categoryDiv.innerHTML = "";
   partsDiv.innerHTML = "";
 
-  const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/bike_years?model_id=eq.${modelId}&select=id,year`,
-    { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
-  );
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/bike_models?brand_id=eq.${id}&select=id,model_name`,
+    { headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`}});
+  const data = await res.json();
+  data.forEach(m => modelSelect.innerHTML += `<option value="${m.id}">${m.model_name}</option>`);
+}
+
+/* ================= LOAD YEARS ================= */
+async function loadYears(id) {
+  yearSelect.innerHTML = `<option value="">Select Year</option>`;
+  categoryDiv.innerHTML = "";
+  partsDiv.innerHTML = "";
+
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/bike_years?model_id=eq.${id}&select=id,year`,
+    { headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`}});
   const data = await res.json();
   data.forEach(y => yearSelect.innerHTML += `<option value="${y.id}">${y.year}</option>`);
 }
 
-/* ===============================
-   LOAD CATEGORIES
-================================ */
+/* ================= LOAD CATEGORIES ================= */
 async function loadCategories() {
   categoryDiv.innerHTML = "";
   partsDiv.innerHTML = "";
 
-  const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/categories?select=id,category_name`,
-    { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
-  );
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/categories?select=id,category_name`,
+    { headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`}});
   const data = await res.json();
 
   data.forEach(c => {
@@ -124,60 +102,45 @@ async function loadCategories() {
   });
 }
 
-/* ===============================
-   LOAD PARTS
-================================ */
+/* ================= LOAD PARTS ================= */
 async function loadParts(categoryId) {
   partsDiv.innerHTML = "Loading parts...";
 
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/spare_parts?brand_id=eq.${brandSelect.value}&model_id=eq.${modelSelect.value}&year_id=eq.${yearSelect.value}&category_id=eq.${categoryId}&select=id,part_name,price,stock_qty`,
-    { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
-  );
+    { headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`}});
   const parts = await res.json();
-  partsDiv.innerHTML = "";
 
-  if (!parts.length) {
-    partsDiv.innerHTML = "No parts available";
-    return;
-  }
+  partsDiv.innerHTML = "";
+  if (!parts.length) return partsDiv.innerHTML = "No parts available";
 
   parts.forEach(p => {
     partsDiv.innerHTML += `
-      <div style="background:#fff;border:1px solid #ddd;padding:10px;margin-bottom:8px;">
+      <div style="background:#fff;padding:10px;margin-bottom:8px;">
         <b>${p.part_name}</b><br>
-        Price: ₹${p.price}<br>
-        Available Qty: ${p.stock_qty}<br>
+        ₹${p.price} | Stock: ${p.stock_qty}<br>
         <button onclick="addToCart('${p.id}', ${p.price})">Add to Cart</button>
-      </div>
-    `;
+      </div>`;
   });
 
-  partsDiv.innerHTML += `
-    <button onclick="loadCart()" style="padding:12px;width:100%;margin-top:10px;">
-      🛒 View Cart
-    </button>
-  `;
+  partsDiv.innerHTML += `<button onclick="loadCart()" style="width:100%;padding:12px;">🛒 View Cart</button>`;
 }
 
-/* ===============================
-   ADD TO CART
-================================ */
+/* ================= ADD TO CART ================= */
 async function addToCart(partId, price) {
   const check = await fetch(
     `${SUPABASE_URL}/rest/v1/cart_items?telegram_user_id=eq.${telegramUserId}&spare_part_id=eq.${partId}&select=id,quantity`,
-    { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
-  );
-  const existing = await check.json();
+    { headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`}});
+  const data = await check.json();
 
-  if (existing.length) {
-    await fetch(`${SUPABASE_URL}/rest/v1/cart_items?id=eq.${existing[0].id}`, {
+  if (data.length) {
+    await fetch(`${SUPABASE_URL}/rest/v1/cart_items?id=eq.${data[0].id}`,{
       method:"PATCH",
       headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,"Content-Type":"application/json"},
-      body:JSON.stringify({quantity: existing[0].quantity + 1})
+      body:JSON.stringify({quantity:data[0].quantity+1})
     });
   } else {
-    await fetch(`${SUPABASE_URL}/rest/v1/cart_items`, {
+    await fetch(`${SUPABASE_URL}/rest/v1/cart_items`,{
       method:"POST",
       headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,"Content-Type":"application/json"},
       body:JSON.stringify({telegram_user_id:telegramUserId,spare_part_id:partId,quantity:1,price})
@@ -186,56 +149,68 @@ async function addToCart(partId, price) {
   alert("Added to cart");
 }
 
-/* ===============================
-   LOAD CART
-================================ */
+/* ================= LOAD CART ================= */
 async function loadCart() {
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/cart_items?telegram_user_id=eq.${telegramUserId}&select=id,price,quantity`,
-    { headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`} }
-  );
+    { headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`}});
   const items = await res.json();
-  if (!items.length) { partsDiv.innerHTML="Cart is empty"; return; }
+
+  if (!items.length) return partsDiv.innerHTML = "Cart is empty";
 
   let subtotal = 0;
-  partsDiv.innerHTML="<h3>Your Cart</h3>";
-
+  partsDiv.innerHTML = "<h3>Your Cart</h3>";
   items.forEach(i=>{
-    subtotal+=i.price*i.quantity;
-    partsDiv.innerHTML+=`
-      <div style="border:1px solid #ccc;padding:8px;margin-bottom:6px;">
-        Qty ${i.quantity} × ₹${i.price}
-      </div>`;
+    subtotal += i.price * i.quantity;
+    partsDiv.innerHTML += `<div>Qty ${i.quantity} × ₹${i.price}</div>`;
   });
 
-  partsDiv.innerHTML+=`
+  partsDiv.innerHTML += `
     <hr>
     Subtotal: ₹${subtotal}<br>
     Delivery: ₹200<br>
     <b>Total: ₹${subtotal+200}</b><br><br>
-    <button onclick="showCheckout()" style="padding:14px;width:100%;">Proceed to Checkout</button>
-  `;
+    <button onclick="showCheckout()" style="width:100%;padding:14px;">Proceed to Checkout</button>`;
 }
 
-/* ===============================
-   CHECKOUT UI
-================================ */
-function showCheckout(){
-  partsDiv.innerHTML=`
-    <h3>Checkout</h3>
-    <input id="custName" placeholder="Name" style="width:100%;padding:8px"><br><br>
-    <input id="custPhone" placeholder="Phone" style="width:100%;padding:8px"><br><br>
-    <textarea id="custAddress" placeholder="Address" style="width:100%;padding:8px"></textarea><br><br>
-    <button onclick="placeOrder()" style="padding:14px;width:100%;">Place Order</button>
-  `;
+/* ================= CHECKOUT ================= */
+function showCheckout() {
+  partsDiv.innerHTML = `
+    <h3>📦 Delivery Address</h3>
+    <input id="name" placeholder="Full Name*" style="width:100%;padding:8px"><br><br>
+    <input id="phone" placeholder="Phone*" style="width:100%;padding:8px"><br><br>
+    <input id="flat" placeholder="Flat / House No*" style="width:100%;padding:8px"><br><br>
+    <input id="building" placeholder="Building / Apartment" style="width:100%;padding:8px"><br><br>
+    <input id="area" placeholder="Area / Street*" style="width:100%;padding:8px"><br><br>
+    <input id="landmark" placeholder="Landmark" style="width:100%;padding:8px"><br><br>
+    <input id="city" placeholder="City*" style="width:100%;padding:8px"><br><br>
+    <input id="state" placeholder="State*" style="width:100%;padding:8px"><br><br>
+    <input id="pincode" placeholder="Pincode*" style="width:100%;padding:8px"><br><br>
+    <input id="map" placeholder="Google Maps link (optional)" style="width:100%;padding:8px"><br><br>
+    <button onclick="placeOrder()" style="width:100%;padding:14px;">🧾 Place Order</button>`;
 }
 
-/* ===============================
-   EVENTS + START
-================================ */
-brandSelect.onchange=()=>brandSelect.value&&loadModels(brandSelect.value);
-modelSelect.onchange=()=>modelSelect.value&&loadYears(modelSelect.value);
-yearSelect.onchange =()=>yearSelect.value && loadCategories();
+/* ================= PLACE ORDER ================= */
+async function placeOrder() {
+  const name=document.getElementById("name").value.trim();
+  const phone=document.getElementById("phone").value.trim();
+  const flat=document.getElementById("flat").value.trim();
+  const area=document.getElementById("area").value.trim();
+  const city=document.getElementById("city").value.trim();
+  const state=document.getElementById("state").value.trim();
+  const pincode=document.getElementById("pincode").value.trim();
+  const map=document.getElementById("map").value.trim();
+
+  if(!name||!phone||!flat||!area||!city||!state||!pincode) return alert("Fill all required fields");
+
+  const address = `${flat}, ${area}, ${city}, ${state} - ${pincode}${map? " | Map: "+map:""}`;
+  alert("Order placed!\nAddress:\n"+address);
+}
+
+/* ================= EVENTS ================= */
+brandSelect.onchange=()=>loadModels(brandSelect.value);
+modelSelect.onchange=()=>loadYears(modelSelect.value);
+yearSelect.onchange=()=>loadCategories();
 loadBrands();
 </script>
 
