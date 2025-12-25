@@ -108,7 +108,7 @@ async function loadParts(categoryId) {
   partsDiv.innerHTML = "Loading parts...";
 
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/spare_parts?brand_id=eq.${brandSelect.value}&model_id=eq.${modelSelect.value}&year_id=eq.${yearSelect.value}&category_id=eq.${categoryId}&select=id,part_name,price,stock_qty`,
+    `${SUPABASE_URL}/rest/v1/spare_parts?brand_id=eq.${brandSelect.value}&model_id=eq.${modelSelect.value}&year_id=eq.${yearSelect.value}&category_id=eq.${categoryId}&select=id,part_name,price,stock_qty,image_url`,
     { headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`}});
   const parts = await res.json();
 
@@ -116,13 +116,37 @@ async function loadParts(categoryId) {
   if (!parts.length) return partsDiv.innerHTML = "No parts available";
 
   parts.forEach(p => {
-    partsDiv.innerHTML += `
-      <div style="background:#fff;padding:10px;margin-bottom:8px;">
+  partsDiv.innerHTML += `
+    <div style="
+      background:#fff;
+      padding:10px;
+      margin-bottom:10px;
+      border-radius:8px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+    ">
+
+      <!-- IMAGE -->
+      <img 
+        src="${p.image_url || 'https://via.placeholder.com/80'}"
+        style="width:80px;height:80px;object-fit:contain;border:1px solid #ddd;border-radius:6px;"
+      >
+
+      <!-- DETAILS -->
+      <div style="flex:1;">
         <b>${p.part_name}</b><br>
-        ₹${p.price} | Stock: ${p.stock_qty}<br>
-        <button onclick="addToCart('${p.id}', ${p.price})">Add to Cart</button>
-      </div>`;
-  });
+        ₹${p.price}<br>
+        Stock: ${p.stock_qty}<br><br>
+
+        <button onclick="addToCart('${p.id}', ${p.price})">
+          Add to Cart
+        </button>
+      </div>
+
+    </div>
+  `;
+});
 
   partsDiv.innerHTML += `<button onclick="loadCart()" style="width:100%;padding:12px;">🛒 View Cart</button>`;
 }
