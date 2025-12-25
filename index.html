@@ -151,26 +151,54 @@ async function addToCart(partId, price) {
 
 /* ================= LOAD CART ================= */
 async function loadCart() {
+  partsDiv.innerHTML = "Loading cart...";
+
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/cart_items?telegram_user_id=eq.${telegramUserId}&select=id,price,quantity`,
-    { headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`}});
+    `${SUPABASE_URL}/rest/v1/cart_items?telegram_user_id=eq.${telegramUserId}&select=id,quantity,price,spare_part_id,spare_parts(part_name)`,
+    {
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`
+      }
+    }
+  );
+
   const items = await res.json();
 
-  if (!items.length) return partsDiv.innerHTML = "Cart is empty";
+  if (items.length === 0) {
+    partsDiv.innerHTML = "Cart is empty";
+    return;
+  }
 
   let subtotal = 0;
   partsDiv.innerHTML = "<h3>Your Cart</h3>";
-  items.forEach(i=>{
-    subtotal += i.price * i.quantity;
-    partsDiv.innerHTML += `<div>Qty ${i.quantity} × ₹${i.price}</div>`;
+
+  items.forEach(i => {
+    const itemTotal = i.price * i.quantity;
+    subtotal += itemTotal;
+
+    partsDiv.innerHTML += `
+      <div style="border:1px solid #ccc;padding:10px;margin-bottom:8px;">
+        <b>${i.spare_parts.part_name}</b><br>
+        ₹${i.price} × ${i.quantity} = ₹${itemTotal}<br><br>
+
+        <button onclick="updateQty('${i.id}', ${i.quantity - 1})">−</button>
+        <button onclick="updateQty('${i.id}', ${i.quantity + 1})">+</button>
+        <button onclick="removeCartItem('${i.id}')">❌ Remove</button>
+      </div>
+    `;
   });
 
   partsDiv.innerHTML += `
     <hr>
     Subtotal: ₹${subtotal}<br>
     Delivery: ₹200<br>
-    <b>Total: ₹${subtotal+200}</b><br><br>
-    <button onclick="showCheckout()" style="width:100%;padding:14px;">Proceed to Checkout</button>`;
+    <b>Total: ₹${subtotal + 200}</b><br><br>
+
+    <button onclick="showCheckout()" style="padding:14px;width:100%;">
+      ✅ Proceed to Checkout
+    </button>
+  `;
 }
 
 /* ================= CHECKOUT ================= */
@@ -189,7 +217,29 @@ function showCheckout() {
     <input id="map" placeholder="Google Maps link (optional)" style="width:100%;padding:8px"><br><br>
     <button onclick="placeOrder()" style="width:100%;padding:14px;">🧾 Place Order</button>`;
 }
+/* ================= ADD QUANTITY UPDATE FUNCTION ================= */
+async function updateQty(cartItemId, newQty) {
+  if (newQty <= 0) {
+    removeCartItem(cartItemId);
+    return;
+  }
 
+  await fetch(
+    `${SUPABASE_URL}/rest/v1/cart_items?id=eq.${cartItemId}`,
+    {
+      method: "PATCH",
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ quantity: newQty })
+    }
+  );
+
+  loadCart();
+}
+  
 /* ================= PLACE ORDER ================= */
 async function placeOrder() {
   const name=document.getElementById("name").value.trim();
