@@ -3,147 +3,121 @@
 <head>
   <title>PK 2 Wheeler Spares</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <!-- Telegram Web App library -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 
 <body style="font-family: Arial; padding: 20px;">
 
-  <h2>🛵 Select Your Bike</h2>
+<h2>🛵 Select Your Bike</h2>
 
-  <!-- BRAND -->
-  <label>Bike Brand</label><br>
-  <select id="brandSelect" style="width:100%; padding:10px;"></select>
-  <br><br>
+<label>Bike Brand</label><br>
+<select id="brandSelect" style="width:100%; padding:10px;"></select>
+<br><br>
 
-  <!-- MODEL -->
-  <label>Bike Model</label><br>
-  <select id="modelSelect" style="width:100%; padding:10px;"></select>
-  <br><br>
+<label>Bike Model</label><br>
+<select id="modelSelect" style="width:100%; padding:10px;"></select>
+<br><br>
 
-  <!-- YEAR -->
-  <label>Bike Year</label><br>
-  <select id="yearSelect" style="width:100%; padding:10px;"></select>
+<label>Bike Year</label><br>
+<select id="yearSelect" style="width:100%; padding:10px;"></select>
 
-  <br><br>
+<br><br>
 <h3>Select Category</h3>
 <div id="categories"></div>
 
-  <br>
+<br>
 <h3>Available Parts</h3>
 <div id="parts"></div>
 
 <script>
 /* ===============================
-   CONFIG – CHANGE ONLY THIS
+   CONFIG
 ================================ */
 const SUPABASE_URL = "https://gmajjousigloyiablmeo.supabase.co";
 const SUPABASE_KEY = "sb_publishable_anzjPC7WhQVAzPP1JSAm4g_W-G90zZY";
 
 /* ===============================
-   ELEMENT REFERENCES
+   ELEMENTS
 ================================ */
 const brandSelect = document.getElementById("brandSelect");
 const modelSelect = document.getElementById("modelSelect");
 const yearSelect  = document.getElementById("yearSelect");
+const categoryDiv = document.getElementById("categories");
+const partsDiv    = document.getElementById("parts");
 
 /* ===============================
-   LOAD BRANDS (FIRST STEP)
+   LOAD BRANDS
 ================================ */
 async function loadBrands() {
   brandSelect.innerHTML = `<option value="">Select Brand</option>`;
   modelSelect.innerHTML = `<option value="">Select Model</option>`;
   yearSelect.innerHTML  = `<option value="">Select Year</option>`;
+  categoryDiv.innerHTML = "";
+  partsDiv.innerHTML = "";
 
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/bike_brands?select=id,brand_name`,
-    {
-      headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`
-      }
-    }
+    { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
   );
 
   const brands = await res.json();
-
   brands.forEach(b => {
-    brandSelect.innerHTML +=
-      `<option value="${b.id}">${b.brand_name}</option>`;
+    brandSelect.innerHTML += `<option value="${b.id}">${b.brand_name}</option>`;
   });
 }
 
 /* ===============================
-   LOAD MODELS WHEN BRAND CHANGES
+   LOAD MODELS
 ================================ */
 async function loadModels(brandId) {
   modelSelect.innerHTML = `<option value="">Select Model</option>`;
   yearSelect.innerHTML  = `<option value="">Select Year</option>`;
+  categoryDiv.innerHTML = "";
+  partsDiv.innerHTML = "";
 
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/bike_models?brand_id=eq.${brandId}&select=id,model_name`,
-    {
-      headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`
-      }
-    }
+    { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
   );
 
   const models = await res.json();
-
   models.forEach(m => {
-    modelSelect.innerHTML +=
-      `<option value="${m.id}">${m.model_name}</option>`;
+    modelSelect.innerHTML += `<option value="${m.id}">${m.model_name}</option>`;
   });
 }
 
 /* ===============================
-   LOAD YEARS WHEN MODEL CHANGES
+   LOAD YEARS
 ================================ */
 async function loadYears(modelId) {
   yearSelect.innerHTML = `<option value="">Select Year</option>`;
+  categoryDiv.innerHTML = "";
+  partsDiv.innerHTML = "";
 
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/bike_years?model_id=eq.${modelId}&select=id,year`,
-    {
-      headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`
-      }
-    }
+    { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
   );
 
   const years = await res.json();
-
   years.forEach(y => {
-    yearSelect.innerHTML +=
-      `<option value="${y.id}">${y.year}</option>`;
+    yearSelect.innerHTML += `<option value="${y.id}">${y.year}</option>`;
   });
 }
 
 /* ===============================
-   LOAD CATEGORY WHEN YEAY CHANGES
+   LOAD CATEGORIES
 ================================ */
-
-  const categoryDiv = document.getElementById("categories");
-
 async function loadCategories() {
   categoryDiv.innerHTML = "";
+  partsDiv.innerHTML = "";
 
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/categories?select=id,category_name`,
-    {
-      headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`
-      }
-    }
+    { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
   );
 
   const categories = await res.json();
-
   categories.forEach(c => {
     const btn = document.createElement("button");
     btn.innerText = c.category_name;
@@ -151,36 +125,21 @@ async function loadCategories() {
     btn.style.width = "100%";
     btn.style.padding = "12px";
     btn.style.marginBottom = "8px";
-
-    btn.onclick = () => {
-  loadParts(c.id);
-};
-
-      // next step: load parts
-    };
-
+    btn.onclick = () => loadParts(c.id);
     categoryDiv.appendChild(btn);
   });
 }
 
 /* ===============================
-   LOAD AVAILABLE PARTS WHEN CATEGORY SELECTS
+   LOAD PARTS
 ================================ */
-  const partsDiv = document.getElementById("parts");
-
 async function loadParts(categoryId) {
   partsDiv.innerHTML = "Loading parts...";
 
-const res = await fetch(
-  `${SUPABASE_URL}/rest/v1/spare_parts?brand_id=eq.${brandSelect.value}&model_id=eq.${modelSelect.value}&year_id=eq.${yearSelect.value}&category_id=eq.${categoryId}&select=id,part_name,price`,
-  {
-    headers: {
-      apikey: SUPABASE_KEY,
-      Authorization: `Bearer ${SUPABASE_KEY}`
-    }
-  }
-);
-
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/spare_parts?brand_id=eq.${brandSelect.value}&model_id=eq.${modelSelect.value}&year_id=eq.${yearSelect.value}&category_id=eq.${categoryId}&select=part_name,price`,
+    { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
+  );
 
   const parts = await res.json();
   partsDiv.innerHTML = "";
@@ -191,48 +150,27 @@ const res = await fetch(
   }
 
   parts.forEach(p => {
-    const row = document.createElement("div");
-    row.style.border = "1px solid #ddd";
-    row.style.padding = "10px";
-    row.style.marginBottom = "8px";
-
-    row.innerHTML = `
-      <b>${p.part_name}</b><br>
-      Price: ₹${p.price}<br>
-      <button>Add to Cart</button>
+    partsDiv.innerHTML += `
+      <div style="border:1px solid #ddd;padding:10px;margin-bottom:8px;">
+        <b>${p.part_name}</b><br>
+        Price: ₹${p.price}<br>
+        <button>Add to Cart</button>
+      </div>
     `;
-
-    partsDiv.appendChild(row);
   });
 }
 
 /* ===============================
-   EVENT LISTENERS
+   EVENTS
 ================================ */
-brandSelect.addEventListener("change", () => {
-  if (brandSelect.value) {
-    loadModels(brandSelect.value);
-  }
-});
-
-modelSelect.addEventListener("change", () => {
-  if (modelSelect.value) {
-    loadYears(modelSelect.value);
-  }
-});
-
-yearSelect.addEventListener("change", () => {
-  if (yearSelect.value) {
-    loadCategories();
-  }
-});
-
+brandSelect.onchange = () => brandSelect.value && loadModels(brandSelect.value);
+modelSelect.onchange = () => modelSelect.value && loadYears(modelSelect.value);
+yearSelect.onchange  = () => yearSelect.value && loadCategories();
 
 /* ===============================
-   START APP
+   START
 ================================ */
 loadBrands();
-
 </script>
 
 </body>
