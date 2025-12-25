@@ -306,6 +306,14 @@ async function addToCart(partId, partName, price) {
     <b>Total: ₹${subtotal + 200}</b>
   `;
 }
+
+  partsDiv.innerHTML += `
+  <br>
+  <button onclick="showCheckout()" style="padding:14px;width:100%;">
+    ✅ Proceed to Checkout
+  </button>
+`;
+
 /* ===============================
    REMOVE ITEM FUNCTION
 ================================ */
@@ -323,6 +331,168 @@ async function addToCart(partId, partName, price) {
 
   loadCart();
 }
+
+/* ===============================
+   ADD CHECKOUT FORM UI
+================================ */
+  function showCheckout() {
+  partsDiv.innerHTML = `
+    <h3>Checkout</h3>
+
+    <label>Name *</label><br>
+    <input id="custName" style="width:100%;padding:8px"><br><br>
+
+    <label>Phone *</label><br>
+    <input id="custPhone" style="width:100%;padding:8px"><br><br>
+
+    <label>Email (optional)</label><br>
+    <input id="custEmail" style="width:100%;padding:8px"><br><br>
+
+    <label>Delivery Address *</label><br>
+    <textarea id="custAddress" style="width:100%;padding:8px"></textarea><br><br>
+
+    <button onclick="placeOrder()" style="padding:14px;width:100%;">
+      🧾 Place Order
+    </button>
+  `;
+}
+
+/* ===============================
+   PLACE ORDER LOGIC (CRITICAL)
+================================ */
+async function placeOrder() {
+  const name = document.getElementById("custName").value.trim();
+  const phone = document.getElementById("custPhone").value.trim();
+  const email = document.getElementById("custEmail").value.trim();
+  const address = document.getElementById("custAddress").value.trim();
+
+  if (!name || !phone || !address) {
+    alert("Please fill all required fields");
+    return;
+  }
+
+  // 1️⃣ Get cart items
+  const cartRes = await fetch(
+    `${SUPABASE_URL}/rest/v1/cart_items?telegram_user_id=eq.${telegramUserId}&select=spare_part_id,colour,quantity,price`,
+    {
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`
+      }
+    }
+  );
+
+  const cartItems = await cartRes.json();
+
+  if (cartItems.length === 0) {
+    alert("Cart is empty");
+    return;
+  }
+
+  // 2️⃣ Calculate totals
+  let subtotal = 0;
+  cartItems.forEach(i => {
+    subtotal += i.price * i.quantity;
+  });
+
+  const deliveryFee = 200;
+  const totalAmount = subtotal + deliveryFee;
+
+  // 3️⃣ Create order
+  const orderRes = await fetch(
+    `${SUPABASE_URL}/rest/v1/orders`,
+    {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+  telegram_user_id: telegramUserId,
+  customer_name: name,
+  phone: phone,
+  email: email || null,
+  address: address,
+  subtotal: subtotal,
+  delivery_fee: deliveryFee,
+  total_amount: totalAmount,
+
+  payment_method: "PENDING",   // will update later
+  payment_status: "UNPAID",    // will update after payment
+  order_status: "CREATED"
+})
+
+    }
+  );
+
+  const orderData = await orderRes.json();
+  const orderId = orderData[0].id;
+
+  // 4️⃣ Insert order items
+  for (let item of cartItems) {
+    await fetch(
+  `${SUPABASE_URL}/rest/v1/order_items`,
+  {
+    method: "POST",
+    headers: {
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      order_id: orderId,
+      spare_part_id: item.spare_part_id,
+      spare_name: item.spare_name,   // snapshot
+      colour: item.colour || null,   // optional
+      quantity: item.quantity,
+      price: item.price
+    })
+  }
+);
+}
+
+  // 5️⃣ Clear cart
+  await fetch(
+    `${SUPABASE_URL}/rest/v1/cart_items?telegram_user_id=eq.${telegramUserId}`,
+    {
+      method: "DELETE",
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`
+      }
+    }
+  );
+
+  // 6️⃣ Show confirmation
+  partsDiv.innerHTML = `
+    <h3>🎉 Order Placed Successfully</h3>
+    <p><b>Order ID:</b> ${orderId}</p>
+    <p><b>Total Paid:</b> ₹${totalAmount}</p>
+    <p><b>Delivery Address:</b><br>${address}</p>
+  `;
+}
+/* ===============================
+   WHEN INSERTING INTO order_items
+================================ */
+  await fetch(
+  `${SUPABASE_URL}/rest/v1/order_items`,
+  {
+    method: "POST",
+    headers: {
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      order_id: orderId,
+      spare_part_id: item.spare_part_id,
+      colour: item.colour || null,
+      quantity: item.quantity,
+      price: item.price
+    })
+  }
+);
 
 /* ===============================
    EVENTS
