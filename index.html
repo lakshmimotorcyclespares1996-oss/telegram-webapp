@@ -32,6 +32,113 @@
 <h3>Available Parts</h3>
 <div id="parts"></div>
 
+<script>
+/* ================= CONFIG ================= */
+
+/**
+ * Telegram User ID
+ * Always available inside Telegram WebApp
+ */
+const telegramUserId =
+  window.Telegram &&
+  Telegram.WebApp &&
+  Telegram.WebApp.initDataUnsafe &&
+  Telegram.WebApp.initDataUnsafe.user
+    ? Telegram.WebApp.initDataUnsafe.user.id
+    : null;
+
+/**
+ * Supabase Configuration
+ * (UNCHANGED from your original file)
+ */
+const SUPABASE_URL = "https://gmajjousigloyiablmeo.supabase.co";
+const SUPABASE_KEY = "sb_publishable_anzjPC7WhQVAzPP1JSAm4g_W-G90zZY";
+
+/**
+ * Google Maps Key (used later)
+ * Keep empty for now
+ */
+const GOOGLE_MAPS_API_KEY = "";
+
+/* ================= CORE LOGGING (app_logs) ================= */
+
+/**
+ * Low-level logger
+ * NEVER throws
+ * NEVER blocks UI
+ */
+async function logEvent({
+  telegram_user_id,
+  order_id = null,
+  log_type = "INFO",
+  source = "frontend",
+  message,
+  details = {}
+}) {
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/app_logs`, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        telegram_user_id,
+        order_id,
+        log_type,
+        source,
+        message,
+        details
+      })
+    });
+  } catch (e) {
+    // ❗ Logging must NEVER break app flow
+    console.warn("Logging failed", e);
+  }
+}
+
+/**
+ * High-level step logger
+ * Standardizes STARTED / COMPLETED / FAILED
+ */
+async function logStep(
+  step,
+  status,
+  details = {},
+  order_id = null,
+  source = "frontend"
+) {
+  await logEvent({
+    telegram_user_id: telegramUserId,
+    order_id,
+    log_type: status === "FAILED" ? "ERROR" : "INFO",
+    source,
+    message: `${step} :: ${status}`,
+    details
+  });
+}
+
+/* ================= SAFE GUARD ================= */
+/**
+ * If telegramUserId is missing, log once.
+ * Do NOT block app.
+ */
+if (!telegramUserId) {
+  console.warn("Telegram user ID not available");
+  logEvent({
+    telegram_user_id: null,
+    log_type: "WARNING",
+    source: "frontend",
+    message: "Telegram user ID missing",
+    details: {
+      note: "App opened outside Telegram or initDataUnsafe unavailable"
+    }
+  });
+}
+</script>
+
+  
 <!-- ================= IMAGE MODAL ================= -->
 <div id="imageModal" style="
   display:none;
