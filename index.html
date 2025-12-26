@@ -38,7 +38,40 @@ const telegramUserId = Telegram.WebApp.initDataUnsafe?.user?.id || 0;
 const SUPABASE_URL = "https://gmajjousigloyiablmeo.supabase.co";
 const SUPABASE_KEY = "sb_publishable_anzjPC7WhQVAzPP1JSAm4g_W-G90zZY";
 const GOOGLE_MAPS_API_KEY = ""; // add key later in production
+/* ================= LOGGING FUNCTION (ADD HERE) ================= */
+async function logEvent({
+  telegram_user_id,
+  order_id = null,
+  log_type = "INFO",
+  source = "frontend",
+  message,
+  details = {}
+}) {
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/app_logs`, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        telegram_user_id,
+        order_id,
+        log_type,
+        source,
+        message,
+        details
+      })
+    });
+  } catch (e) {
+    // ❗ NEVER block the app for logging
+    console.warn("Logging failed", e);
+  }
+}
 
+/* ================= ELEMENTS ================= */
+const brandSelect = document.getElementById("brandSelect");
 
 /* ================= ELEMENTS ================= */
 const brandSelect = document.getElementById("brandSelect");
@@ -523,6 +556,15 @@ const selectedYear =
   yearSelect.options[yearSelect.selectedIndex]?.text || "";
   
 /* ================= PLACE ORDER ================= */
+
+  
+/*-----LOGING----- */
+await logEvent({
+  telegram_user_id: telegramUserId,
+  log_type: "INFO",
+  message: "Place Order button clicked"
+});
+  
 async function placeOrder(paymentMethod) {
   const name = document.getElementById("name").value.trim();
   const phone = document.getElementById("phone").value.trim();
@@ -554,7 +596,13 @@ if (!/^[0-9]{6}$/.test(pincode)) {
     alert("Fill all required fields");
     return;
   }
-
+  /*--------------ERROR LOGING------------*/
+await logEvent({
+  telegram_user_id: telegramUserId,
+  log_type: "INFO",
+  message: "User validation successful"
+});
+ /*--------------ERROR LOGING------------*/
   const address = `${flat}, ${area}, ${city}, ${state} - ${pincode}`;
 
   // 1️⃣ Get cart items
@@ -594,7 +642,13 @@ if (!/^[0-9]{6}$/.test(pincode)) {
   const totalAmount = subtotal + deliveryFee;
 
   // ================= CREATE ORDER (COD) =================
-
+  /*---------ERROR LOGGING-----*/
+await logEvent({
+  telegram_user_id: telegramUserId,
+  log_type: "INFO",
+  message: "Creating order in database"
+});
+/*---------ERROR LOGGING-----*/
 const orderRes = await fetch(
   `${SUPABASE_URL}/rest/v1/orders`,
   {
@@ -621,6 +675,14 @@ const orderRes = await fetch(
     })
   }
 );
+/* ================= ERROR HANDLING  ORDER INSERT ================= */
+  await logEvent({
+  telegram_user_id: telegramUserId,
+  order_id: orderId,
+  log_type: "INFO",
+  message: "Order created successfully"
+});
+const orderId = orderData[0].id;
 /* ================= ERROR HANDLING AROUND ORDER INSERT ================= */
 if (!orderRes.ok) {
   const err = await orderRes.text();
@@ -630,8 +692,17 @@ if (!orderRes.ok) {
 
 const orderData = await orderRes.json();
 /* ================= END OF ERROR HANDLING AROUND ORDER INSERT ================= */
-const orderId = orderData[0].id;
+
 /* ================= SUCCESS UI (ALWAYS SHOW FIRST) ================= */
+/*----------ERROR HANDLING----------*/
+await logEvent({
+  telegram_user_id: telegramUserId,
+  order_id: orderId,
+  log_type: "INFO",
+  message: "Showing order success UI"
+});
+/*----------ERROR HANDLING----------*/
+  
 partsDiv.innerHTML = `
   <h3>🎉 Order Placed Successfully</h3>
   <p><b>Order ID:</b> ${orderId}</p>
@@ -674,6 +745,16 @@ try {
 } catch (e) {
   console.warn("Admin notification failed", e);
 }
+/* ================= TELEGRAM ERROR LOGGING ================= */
+  catch (e) {
+  await logEvent({
+    telegram_user_id: telegramUserId,
+    order_id: orderId,
+    log_type: "ERROR",
+    message: "Admin notification failed",
+    details: { error: e.message }
+  });
+}
 
 /* ================= EMAIL INVOICE (OPTIONAL) ================= */
 if (email) {
@@ -701,7 +782,15 @@ if (email) {
       }
     );
   } catch (e) {
-    console.warn("Email failed", e);
+  await logEvent({
+    telegram_user_id: telegramUserId,
+    order_id: orderId,
+    log_type: "ERROR",
+    source: "email",
+    message: "Invoice email failed",
+    details: { error: e.message }
+  });
+}   
   }
 }
 
@@ -750,8 +839,17 @@ if (email) {
 );
 
 }
+/* ================= ERROR LOGGING ================= */
+catch (e) {
+  await logEvent({
+    telegram_user_id: telegramUserId,
+    order_id: orderId,
+    log_type: "ERROR",
+    message: "Invoice email failed",
+    details: { error: e.message }
+  });
+}
 
-  
 /* ================= Clear cart ================= */
   // 4️⃣ Clear cart
   await fetch(
@@ -792,7 +890,8 @@ function closeModal() {
 }
 /* ================= ADD FUNCTION TO SEND ADMIN ALERT ================= */
   async function notifyAdmin(order) {
-  const message = `
+  try {
+    const message = `
 🆕 *NEW COD ORDER*
 
 🧾 Order ID: ${order.id}
@@ -803,20 +902,33 @@ function closeModal() {
 ${order.address}
 
 ⏰ ${new Date().toLocaleString()}
-  `;
+    `;
 
-  const url = `https://api.telegram.org/bot${ADMIN_BOT_TOKEN}/sendMessage`;
+    const url = `https://api.telegram.org/bot${ADMIN_BOT_TOKEN}/sendMessage`;
 
-  await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      chat_id: ADMIN_CHAT_ID,
-      text: message,
-      parse_mode: "Markdown"
-    })
-  });
+    await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: ADMIN_CHAT_ID,
+        text: message,
+        parse_mode: "Markdown"
+      })
+    });
+
+  } catch (e) {
+    // ✅ THIS IS THE EXACT PLACE
+    await logEvent({
+      telegram_user_id: telegramUserId,
+      order_id: order.id,
+      log_type: "ERROR",
+      source: "telegram",
+      message: "Admin notification failed",
+      details: { error: e.message }
+    });
+  }
 }
+
   
 </script>
   
