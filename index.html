@@ -70,7 +70,7 @@ async function logEvent({
   }
 }
 
-/* ================= LOGGING FUNCTION END ================= *
+/* ================= LOGGING FUNCTION END ================= */
 
 /* ================= ELEMENTS ================= */
 const brandSelect = document.getElementById("brandSelect");
@@ -676,7 +676,7 @@ const orderRes = await fetch(
     })
   }
 );
-  const orderId = orderData[0].id;
+  
 /* ================= ERROR HANDLING  ORDER INSERT ================= */
   await logEvent({
   telegram_user_id: telegramUserId,
@@ -693,6 +693,7 @@ if (!orderRes.ok) {
 }
 
 const orderData = await orderRes.json();
+const orderId = orderData[0].id;
 /* ================= END OF ERROR HANDLING AROUND ORDER INSERT ================= */
 
 /* ================= SUCCESS UI (ALWAYS SHOW FIRST) ================= */
@@ -746,8 +747,7 @@ try {
   );
 } catch (e) {
   console.warn("Admin notification failed", e);
-}
-/* ================= TELEGRAM ERROR LOGGING ================= */
+  /* ================= TELEGRAM ERROR LOGGING ================= */
   catch (e) {
   await logEvent({
     telegram_user_id: telegramUserId,
@@ -756,6 +756,8 @@ try {
     message: "Admin notification failed",
     details: { error: e.message }
   });
+}
+
 }
 
 /* ================= EMAIL INVOICE (OPTIONAL) ================= */
@@ -918,7 +920,7 @@ ${order.address}
       })
     });
 
-  } catch (e) {
+    catch (e) {
     // ✅ THIS IS THE EXACT PLACE
     await logEvent({
       telegram_user_id: telegramUserId,
@@ -928,6 +930,8 @@ ${order.address}
       message: "Admin notification failed",
       details: { error: e.message }
     });
+
+  } 
   }
 }
 
