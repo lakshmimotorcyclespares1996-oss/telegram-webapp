@@ -613,30 +613,78 @@ if (!orderRes.ok) {
 const orderData = await orderRes.json();
 /* ================= END OF ERROR HANDLING AROUND ORDER INSERT ================= */
 const orderId = orderData[0].id;
-await notifyAdmin({
-  id: orderId,
-  customer_name: name,
-  phone: phone,
-  address: address,
-  total_amount: totalAmount
-});
-/* ================= edge case  ================= */
-// 🔹 SAVE ORDER ITEMS
-for (const item of cartItems) {
-  await fetch(`${SUPABASE_URL}/rest/v1/order_items`, {
-    method: "POST",
+/* ================= SUCCESS UI (ALWAYS SHOW FIRST) ================= */
+partsDiv.innerHTML = `
+  <h3>🎉 Order Placed Successfully</h3>
+  <p><b>Order ID:</b> ${orderId}</p>
+  <p><b>Payment:</b> Cash on Delivery</p>
+  <p><b>Total:</b> ₹${totalAmount}</p>
+  <p>📦 We will contact you shortly</p>
+`;
+
+/* ================= CLEAR CART ================= */
+await fetch(
+  `${SUPABASE_URL}/rest/v1/cart_items?telegram_user_id=eq.${telegramUserId}`,
+  {
+    method: "DELETE",
     headers: {
       apikey: SUPABASE_KEY,
-      Authorization: `Bearer ${SUPABASE_KEY}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      order_id: orderId,
-      spare_part_id: item.spare_part_id,
-      quantity: item.quantity,
-      price: item.price
-    })
-  });
+      Authorization: `Bearer ${SUPABASE_KEY}`
+    }
+  }
+);
+
+/* ================= ADMIN NOTIFICATION (EDGE FUNCTION) ================= */
+try {
+  await fetch(
+    "https://gmajjousigloyiablmeo.functions.supabase.co/notify-admin",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${SUPABASE_KEY}`
+      },
+      body: JSON.stringify({
+        id: orderId,
+        customer_name: name,
+        phone,
+        address,
+        total_amount: totalAmount
+      })
+    }
+  );
+} catch (e) {
+  console.warn("Admin notification failed", e);
+}
+
+/* ================= EMAIL INVOICE (OPTIONAL) ================= */
+if (email) {
+  try {
+    await fetch(
+      "https://gmajjousigloyiablmeo.functions.supabase.co/send-invoice",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SUPABASE_KEY}`
+        },
+        body: JSON.stringify({
+          order: {
+            id: orderId,
+            customer_name: name,
+            phone,
+            email,
+            address,
+            subtotal,
+            delivery_fee: 200,
+            total_amount: totalAmount
+          }
+        })
+      }
+    );
+  } catch (e) {
+    console.warn("Email failed", e);
+  }
 }
 
 /* ================= CALL EMAIL FUNCTION FROM WEB APP ================= */
