@@ -39,7 +39,7 @@ const SUPABASE_URL = "https://gmajjousigloyiablmeo.supabase.co";
 const SUPABASE_KEY = "sb_publishable_anzjPC7WhQVAzPP1JSAm4g_W-G90zZY";
 const GOOGLE_MAPS_API_KEY = ""; // add key later in production
 const ADMIN_CHAT_ID = "835405399";
-const ADMIN_BOT_TOKEN = "8247725524:AAHNNF7r1o6Xp1qIul7Bq3s_6iUCrd-L0PU";
+
 /* ================= ELEMENTS ================= */
 const brandSelect = document.getElementById("brandSelect");
 const modelSelect = document.getElementById("modelSelect");
@@ -666,7 +666,7 @@ if (email) {
   }
 
   await fetch(
-  "https://gmajjousigloyiablmeo.functions.supabase.co/send-invoice",
+  "https://gmajjousigloyiablmeo.functions.supabase.co/notify-admin",
   {
     method: "POST",
     headers: {
@@ -674,20 +674,15 @@ if (email) {
       "Authorization": `Bearer ${SUPABASE_KEY}`
     },
     body: JSON.stringify({
-      order: {
-        id: orderId,
-        customer_name: name,
-        phone,
-        email,
-        address,
-        subtotal,
-        delivery_fee: 200,
-        total_amount: totalAmount
-      },
-      items
+      id: orderId,
+      customer_name: name,
+      phone,
+      address,
+      total_amount: totalAmount
     })
   }
 );
+
 }
 
   
