@@ -512,6 +512,15 @@ async function handleImageClick(partId, imageUrl) {
     colorDiv.appendChild(btn);
   });
 }
+/* ================= WHERE TO GET BIKE DETAILS TO SEND SPARES DETAILS IN MAIL ================= */  
+const selectedBrand =
+  brandSelect.options[brandSelect.selectedIndex]?.text || "";
+
+const selectedModel =
+  modelSelect.options[modelSelect.selectedIndex]?.text || "";
+
+const selectedYear =
+  yearSelect.options[yearSelect.selectedIndex]?.text || "";
   
 /* ================= PLACE ORDER ================= */
 async function placeOrder(paymentMethod) {
@@ -560,11 +569,20 @@ if (!/^[0-9]{6}$/.test(pincode)) {
   );
 
   const cartItems = await cartRes.json();
+//-------BUILD PARTS SUMMARY (VERY IMPORTANT)-----
+  const partsSummary = cartItems.map(item => ({
+  spare_part_id: item.spare_part_id,
+  quantity: item.quantity,
+  price: item.price,
+  color: item.color || null
+}));
+//-------END OF BUILD PARTS SUMMARY -----
 
   if (cartItems.length === 0) {
     alert("Cart is empty");
     return;
   }
+
 
   // 2️⃣ Calculate totals
   let subtotal = 0;
