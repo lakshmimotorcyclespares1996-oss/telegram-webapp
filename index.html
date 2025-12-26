@@ -70,8 +70,7 @@ async function logEvent({
   }
 }
 
-/* ================= ELEMENTS ================= */
-const brandSelect = document.getElementById("brandSelect");
+/* ================= LOGGING FUNCTION END ================= *
 
 /* ================= ELEMENTS ================= */
 const brandSelect = document.getElementById("brandSelect");
@@ -559,13 +558,15 @@ const selectedYear =
 
   
 /*-----LOGING----- */
+
+async function placeOrder(paymentMethod) {
+
 await logEvent({
   telegram_user_id: telegramUserId,
   log_type: "INFO",
   message: "Place Order button clicked"
 });
   
-async function placeOrder(paymentMethod) {
   const name = document.getElementById("name").value.trim();
   const phone = document.getElementById("phone").value.trim();
   // 📞 PHONE VALIDATION (India – 10 digits)
@@ -675,6 +676,7 @@ const orderRes = await fetch(
     })
   }
 );
+  const orderId = orderData[0].id;
 /* ================= ERROR HANDLING  ORDER INSERT ================= */
   await logEvent({
   telegram_user_id: telegramUserId,
@@ -682,7 +684,7 @@ const orderRes = await fetch(
   log_type: "INFO",
   message: "Order created successfully"
 });
-const orderId = orderData[0].id;
+
 /* ================= ERROR HANDLING AROUND ORDER INSERT ================= */
 if (!orderRes.ok) {
   const err = await orderRes.text();
